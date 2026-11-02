@@ -16,10 +16,10 @@ from cyclonedx.model import (
     HashAlgorithm,
     HashType,
     Property,
-    Tool,
 )
 from cyclonedx.model.bom import Bom
 from cyclonedx.model.component import Component, ComponentType
+from cyclonedx.model.contact import OrganizationalEntity
 from cyclonedx.model.license import DisjunctiveLicense
 from cyclonedx.model.vulnerability import (
     Vulnerability,
@@ -72,9 +72,15 @@ class CycloneDX:
             # Unable to determine current version of 'checkov'
             version = "UNKNOWN"
 
-        this_tool = Tool(vendor="bridgecrew", name="checkov", version=version)
+        # cyclonedx-python-lib >= 9 deprecates the Tool model in favour of tool components.
+        this_tool = Component(
+            type=ComponentType.APPLICATION,
+            supplier=OrganizationalEntity(name="bridgecrew"),
+            name="checkov",
+            version=version,
+        )
         self.update_tool_external_references(this_tool)
-        bom.metadata.tools.add(this_tool)
+        bom.metadata.tools.components.add(this_tool)
 
         for report in self.reports:
             if report.check_type in SCA_CHECKTYPES and self.export_iac_only:
@@ -439,7 +445,7 @@ class CycloneDX:
 
         return self.get_output(output_format=OutputFormat.JSON)
 
-    def update_tool_external_references(self, tool: Tool) -> None:
+    def update_tool_external_references(self, tool: Component) -> None:
         tool.external_references.update(
             [
                 ExternalReference(

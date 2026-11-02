@@ -125,14 +125,15 @@ def test_valid_cyclonedx_image_bom():
         type='oci',
         version='ubuntu:latest',
     )
-    image_component = Component(
-        name='acme/repo//ubuntu:latest',
-        purl=image_purl,
-        group=None,
-        type=ComponentType.CONTAINER,
-        version=''
-    )
-    assert cyclonedx.bom.has_component(image_component)
+    # cyclonedx-python-lib >= 8 includes bom_ref in Component equality, and the report
+    # assigns the purl as bom_ref, so compare the component's fields instead.
+    image_component = cyclonedx.bom.get_component_by_purl(purl=image_purl)
+    assert image_component is not None
+    assert image_component.name == 'acme/repo//ubuntu:latest'
+    assert image_component.group is None
+    assert image_component.type == ComponentType.CONTAINER
+    assert image_component.version == ''
+    assert image_component.bom_ref.value == str(image_purl)
 
     assert "http://cyclonedx.org/schema/bom/1.4" in output
 
